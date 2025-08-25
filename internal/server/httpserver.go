@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"log"
 	"ms_dialog/internal/app/handlers"
+	"ms_dialog/internal/app/repository"
 	"ms_dialog/internal/app/service"
 	"ms_dialog/internal/config"
+	"ms_dialog/internal/db/postgres"
 	"net/http"
 	"os"
 	"os/signal"
@@ -23,8 +25,6 @@ import (
 
 func StartServer(config *config.Config) {
 
-	fmt.Println(config.GrpcServer.Addr)
-
 	// connect event client
 	client, err := eventclient.New(eventclient.Config{
 		GatewayAddress: config.GrpcServer.Addr,
@@ -39,7 +39,7 @@ func StartServer(config *config.Config) {
 
 	defer client.Close()
 
-	log.Println("Dialog service started")
+	log.Println("MS Dialog service started")
 
 	// subscribe on event
 	err = client.Subscribe(context.Background(), []string{
@@ -52,7 +52,11 @@ func StartServer(config *config.Config) {
 	}
 
 	// init service dialog
-	newDialogService := service.NewDialogService(client)
+	conn := postgres.Connect(config)
+	defer postgres.Close(conn)
+
+	dialogRepository := repository.InitDialogRepository(conn)
+	newDialogService := service.NewDialogService(client, dialogRepository)
 
 	// init handlers
 	handlers, err := handlers.Init(newDialogService)

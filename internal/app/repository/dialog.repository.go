@@ -2,37 +2,33 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"ms_dialog/internal/app/entity"
-	"ms_dialog/internal/db/postgres"
 
 	"github.com/lib/pq"
 )
 
 type DialogRepository struct {
-	dataSource *postgres.ReplicationRoutingDataSource
+	conn *sql.DB
 }
 
-func InitDialogRepository(dataSource *postgres.ReplicationRoutingDataSource) *DialogRepository {
-	return &DialogRepository{dataSource}
+func InitDialogRepository(conn *sql.DB) *DialogRepository {
+	return &DialogRepository{conn}
 }
 
 func (d *DialogRepository) SendMsgUser(newMsg *entity.Dialog) (*entity.Dialog, error) {
 	ctx := context.Background()
-	masterDb, err := d.dataSource.GetDBMaster(ctx)
-	if err != nil {
-		return nil, err
-	}
 
-	tx, err := masterDb.BeginTx(ctx, nil)
+	tx, err := d.conn.BeginTx(ctx, nil)
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
 	}
 	defer tx.Rollback()
 
-	stmt, err := masterDb.PrepareContext(ctx, `INSERT INTO dialog (user_id_sender, user_id_recipient, msg) VALUES ($1, $2, $3) RETURNING id`)
+	stmt, err := d.conn.PrepareContext(ctx, `INSERT INTO dialog (user_id_sender, user_id_recipient, msg) VALUES ($1, $2, $3) RETURNING id`)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
@@ -57,11 +53,6 @@ func (d *DialogRepository) SendMsgUser(newMsg *entity.Dialog) (*entity.Dialog, e
 }
 
 func (d *DialogRepository) GetDialogList(userIdSender int, userIdRecepient int) (*[]entity.Dialog, error) {
-	slaveDb := d.dataSource.ChooseSlave()
-
-	if slaveDb == nil {
-		return nil, fmt.Errorf("no available slave databases")
-	}
 
 	// build slice ids_sender
 	var idsSender []int
@@ -83,7 +74,7 @@ func (d *DialogRepository) GetDialogList(userIdSender int, userIdRecepient int) 
 
 	query := "SELECT id, user_id_sender, user_id_recipient, msg, created_at, updated_at FROM dialog WHERE user_id_sender = ANY($1) AND user_id_recipient = ANY($2)"
 
-	rows, err := slaveDb.QueryContext(ctx, query, idsSenderValues[0], idsRecipientValues[0])
+	rows, err := d.conn.QueryContext(ctx, query, idsSenderValues[0], idsRecipientValues[0])
 	if err != nil {
 		return nil, err
 	}

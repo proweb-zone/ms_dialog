@@ -1,8 +1,14 @@
 package handlers
 
 import (
+	"io"
+	"ms_dialog/internal/app/dto"
 	"ms_dialog/internal/app/service"
+	"ms_dialog/internal/utils"
 	"net/http"
+	"strconv"
+
+	"github.com/go-chi/chi"
 )
 
 type Handler struct {
@@ -11,28 +17,11 @@ type Handler struct {
 
 func Init(newDialogService *service.DialogService) (*Handler, error) {
 	return &Handler{dialogService: newDialogService}, nil
-
-	// masterURL := []string{config.UrlsDb.Db}
-	// slaveURLs := []string{
-	// 	config.UrlsDb.Db,
-	// }
-
-	// dataSource, err := postgres.NewReplicationRoutingDataSource(masterURL, slaveURLs, true)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// //defer dataSource.Close()
-
-	// dialogRepository := repository.InitDialogRepository(dataSource)
-	// dialogService := service.InitDialogService(dialogRepository)
-
-	// return &Handler{
-	// 	dialogService: dialogService,
-	// }
 }
 
 func (h *Handler) SendMsgUser(w http.ResponseWriter, r *http.Request) {
-	h.dialogService.SendMsgUser()
+	//h.dialogService.SendMsgUser()
+
 	// auth, errAccessToken := h.checkTokenAccess(r)
 
 	// if errAccessToken != nil {
@@ -42,44 +31,44 @@ func (h *Handler) SendMsgUser(w http.ResponseWriter, r *http.Request) {
 
 	// userId := auth.User_id
 
-	// userId := 1
+	userId := 2
 
-	// userIdRecepientStr := chi.URLParam(r, "user_id")
-	// userIdRecepient, err := strconv.Atoi(userIdRecepientStr)
-	// if err != nil {
-	// 	http.Error(w, "Error: User id "+userIdRecepientStr+"  не найден", http.StatusBadRequest)
-	// 	return
-	// }
+	userIdRecepientStr := chi.URLParam(r, "user_id")
+	userIdRecepient, err := strconv.Atoi(userIdRecepientStr)
+	if err != nil {
+		http.Error(w, "Error: User id "+userIdRecepientStr+"  не найден", http.StatusBadRequest)
+		return
+	}
 
-	// if userId == userIdRecepient {
-	// 	http.Error(w, "Вы не можете отправлять письмо самим себе", http.StatusBadRequest)
-	// 	return
-	// }
+	if userId == userIdRecepient {
+		http.Error(w, "Вы не можете отправлять письмо самим себе", http.StatusBadRequest)
+		return
+	}
 
-	// body, err := io.ReadAll(r.Body)
-	// if err != nil {
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
-	// defer r.Body.Close()
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer r.Body.Close()
 
-	// var requestDialogDto dto.DialogRequestDto
-	// if err := utils.DecodeJson(body, &requestDialogDto); err != nil {
-	// 	http.Error(w, err.Error(), http.StatusBadRequest)
-	// 	return
-	// }
+	var requestDialogDto dto.DialogRequestDto
+	if err := utils.DecodeJson(body, &requestDialogDto); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
-	// requestDialogDto.User_id_sender = userId
-	// requestDialogDto.User_id_recipient = userIdRecepient
+	requestDialogDto.User_id_sender = userId
+	requestDialogDto.User_id_recipient = userIdRecepient
 
-	// dialogId, errSendMsgUser := h.dialogService.SendMsgUser(&requestDialogDto)
-	// if errSendMsgUser != nil {
-	// 	http.Error(w, errSendMsgUser.Error(), http.StatusBadRequest)
-	// 	return
-	// }
+	dialogId, errSendMsgUser := h.dialogService.SendMsgUser(&requestDialogDto)
+	if errSendMsgUser != nil {
+		http.Error(w, errSendMsgUser.Error(), http.StatusBadRequest)
+		return
+	}
 
-	// utils.ResponseJson(dialogId, w)
-	w.Write([]byte("send msg user"))
+	utils.ResponseJson(dialogId, w)
+	//w.Write([]byte("send msg user"))
 	return
 }
 
