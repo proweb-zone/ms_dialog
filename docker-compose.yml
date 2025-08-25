@@ -1,0 +1,35 @@
+services:
+  pg-dialog-service:
+    image: postgres:16.1-alpine3.18
+    container_name: pg-dialog-service
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      PGPASSWORD: pass
+      TZ: Europe/Moscow
+    ports:
+      - ${DB_PORT}:5432
+    volumes:
+      - ./pg_data/master/:/var/lib/postgresql/data
+    networks:
+      shared-net:
+    env_file: ".env"
+  ms-dialog:
+    container_name: ms-dialog
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    networks:
+      shared-net:
+    depends_on:
+      - pg-dialog-service
+    env_file:
+      - .env
+
+networks:
+  shared-net:
+    external: true
+    name: shared-app-network

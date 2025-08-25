@@ -12,6 +12,7 @@ import (
 func Connect(config *config.Config) *sql.DB {
 	//fmt.Println(config)
 	connStr := buildDbConnectUrl(config)
+	fmt.Println(connStr)
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		panic(err)
@@ -27,6 +28,14 @@ func Close(db *sql.DB) error {
 	return db.Close()
 }
 
-func buildDbConnectUrl(сfgEnv *config.Config) string {
-	return fmt.Sprintf("%s://%s:%s@%s:%s/%s?%s")
+func buildDbConnectUrl(config *config.Config) string {
+	return fmt.Sprintf("%s://%s:%s@%s:%s/%s?%s",
+		config.Db.Driver,
+		config.Db.User,
+		config.Db.Password,
+		config.Db.Host,
+		config.Db.Port,
+		config.Db.Name,
+		config.Db.Option,
+	)
 }

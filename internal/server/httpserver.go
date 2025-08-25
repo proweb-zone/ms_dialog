@@ -23,9 +23,11 @@ import (
 
 func StartServer(config *config.Config) {
 
+	fmt.Println(config.GrpcServer.Addr)
+
 	// connect event client
 	client, err := eventclient.New(eventclient.Config{
-		GatewayAddress: "localhost:50051",
+		GatewayAddress: config.GrpcServer.Addr,
 		ServiceName:    "dialog-service",
 		MaxRetries:     5,
 		RetryDelay:     1 * time.Second,

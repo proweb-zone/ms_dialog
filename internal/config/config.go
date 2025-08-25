@@ -13,12 +13,17 @@ import (
 type Config struct {
 	Env        string `yaml:"env" env-default:"local"`
 	HTTPServer `yaml:"http_server"`
+	GrpcServer `yaml:"grpc_server"`
 	Db
 	UrlsDb
 }
 
 type HTTPServer struct {
 	ServerPort string `yaml:"server_port"`
+}
+
+type GrpcServer struct {
+	Addr string `yaml:"grpc_server_address"`
 }
 
 type Db struct {
@@ -50,10 +55,21 @@ func MustInit(configPath string) *Config {
 
 	var urlDb = buildDbConnectUrl(db)
 
+	env := MustGetEnv("ENV")
+
+	// определяем переменную grpc сервера в dev/prod режиме
+	grpcAddrServer := MustGetEnv("GRPC_SERVER_ADDRESS")
+	if env == "DEV" {
+		grpcAddrServer = MustGetEnv("GRPC_SERVER_ADDRESS_DEV")
+	}
+
 	return &Config{
-		Env: MustGetEnv("ENV"),
+		Env: env,
 		HTTPServer: HTTPServer{
 			ServerPort: MustGetEnv("SERVER_PORT"),
+		},
+		GrpcServer: GrpcServer{
+			Addr: grpcAddrServer,
 		},
 		Db: *db,
 		UrlsDb: UrlsDb{
