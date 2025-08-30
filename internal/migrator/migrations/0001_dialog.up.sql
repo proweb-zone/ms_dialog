@@ -8,3 +8,12 @@ CREATE TABLE dialog (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     primary key (id, user_id_sender, user_id_recipient)
 );
+
+CREATE TABLE auth (
+    id SERIAL,
+    user_id INTEGER,
+	  token VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    primary key (id)
+);

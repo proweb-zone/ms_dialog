@@ -14,6 +14,9 @@ services:
       - ./pg_data/master/:/var/lib/postgresql/data
     networks:
       shared-net:
+        aliases:
+          - pg-dialog-service.shared
+    hostname: pg-dialog-service
     env_file: ".env"
   ms-dialog:
     container_name: ms-dialog

@@ -7,6 +7,7 @@ type Dialog struct {
 	User_id_sender    int       `json:"user_id_sender"`
 	User_id_recipient int       `json:"user_id"`
 	Msg               string    `json:"msg"`
+	State             bool      `json:"state"`
 	CreatedAt         time.Time `json:"created_at"`
 	Updated_at        string    `json:"updated_at"`
 }

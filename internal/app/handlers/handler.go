@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"io"
+	"log"
 	"ms_dialog/internal/app/dto"
 	"ms_dialog/internal/app/service"
 	"ms_dialog/internal/utils"
@@ -9,29 +10,36 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi"
+	pb "github.com/proweb-zone/event-client/gen/go"
 )
 
 type Handler struct {
 	dialogService *service.DialogService
+	authService   *service.AuthService
 }
 
-func Init(newDialogService *service.DialogService) (*Handler, error) {
-	return &Handler{dialogService: newDialogService}, nil
+func NewHandlers(newDialogService *service.DialogService, newAthService *service.AuthService) (*Handler, error) {
+	return &Handler{dialogService: newDialogService, authService: newAthService}, nil
+}
+
+func (h *Handler) Events(event *pb.Event) error {
+	switch event.Type {
+	case "user.access":
+		h.dialogService.CheckMsg(event)
+		return nil
+	case "user.auth":
+		h.authService.CreateToken(event)
+		return nil
+	default:
+		log.Printf("Unknown event type: %s", event.Type)
+		return nil
+	}
 }
 
 func (h *Handler) SendMsgUser(w http.ResponseWriter, r *http.Request) {
-	//h.dialogService.SendMsgUser()
 
-	// auth, errAccessToken := h.checkTokenAccess(r)
-
-	// if errAccessToken != nil {
-	// 	http.Error(w, "Error check Bearer Token", http.StatusBadRequest)
-	// 	return
-	// }
-
-	// userId := auth.User_id
-
-	userId := 2
+	// добавить
+	userId := 1
 
 	userIdRecepientStr := chi.URLParam(r, "user_id")
 	userIdRecepient, err := strconv.Atoi(userIdRecepientStr)
@@ -81,28 +89,28 @@ func (h *Handler) GetDialog(w http.ResponseWriter, r *http.Request) {
 	// }
 
 	// userIdSender := auth.User_id
-	// userIdSender := 1
+	userIdSender := 1
 
-	// userIdRecepientStr := chi.URLParam(r, "user_id")
-	// userIdRecepient, err := strconv.Atoi(userIdRecepientStr)
-	// if err != nil {
-	// 	http.Error(w, "Error: User id "+userIdRecepientStr+"  не найден", http.StatusBadRequest)
-	// 	return
-	// }
+	userIdRecepientStr := chi.URLParam(r, "user_id")
+	userIdRecepient, err := strconv.Atoi(userIdRecepientStr)
+	if err != nil {
+		http.Error(w, "Error: User id "+userIdRecepientStr+"  не найден", http.StatusBadRequest)
+		return
+	}
 
-	// if userIdSender == userIdRecepient {
-	// 	http.Error(w, "Вы не можете получать диалог самого себя", http.StatusBadRequest)
-	// 	return
-	// }
+	if userIdSender == userIdRecepient {
+		http.Error(w, "Вы не можете получать диалог самого себя", http.StatusBadRequest)
+		return
+	}
 
-	// dialogList, errorDialog := h.dialogService.GetDialogList(userIdSender, userIdRecepient)
-	// if errorDialog != nil {
-	// 	http.Error(w, errorDialog.Error(), http.StatusBadRequest)
-	// 	return
-	// }
+	dialogList, errorDialog := h.dialogService.GetDialogList(userIdSender, userIdRecepient)
+	if errorDialog != nil {
+		http.Error(w, errorDialog.Error(), http.StatusBadRequest)
+		return
+	}
 
-	// utils.ResponseJson(dialogList, w)
+	utils.ResponseJson(dialogList, w)
 
-	w.Write([]byte("get dialog"))
+	//w.Write([]byte("get dialog"))
 	return
 }

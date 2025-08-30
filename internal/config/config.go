@@ -43,10 +43,19 @@ type UrlsDb struct {
 func MustInit(configPath string) *Config {
 	godotenv.Load(configPath)
 
+	env := MustGetEnv("ENV")
+
+	dbPort := "5432"
+	dbHost := MustGetEnv("DB_HOST")
+	if env == "DEV" {
+		dbPort = MustGetEnv("DB_PORT")
+		dbHost = "localhost"
+	}
+
 	db := &Db{
 		Driver:   MustGetEnv("DB_DRIVER"),
-		Host:     MustGetEnv("DB_HOST"),
-		Port:     MustGetEnv("DB_PORT"),
+		Host:     dbHost,
+		Port:     dbPort,
 		Name:     MustGetEnv("DB_NAME"),
 		User:     MustGetEnv("DB_USER"),
 		Password: MustGetEnv("DB_PASSWORD"),
@@ -54,8 +63,6 @@ func MustInit(configPath string) *Config {
 	}
 
 	var urlDb = buildDbConnectUrl(db)
-
-	env := MustGetEnv("ENV")
 
 	// определяем переменную grpc сервера в dev/prod режиме
 	grpcAddrServer := MustGetEnv("GRPC_SERVER_ADDRESS")
