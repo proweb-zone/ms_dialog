@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"log"
+	"ms_dialog/internal/app/entity"
 	"ms_dialog/internal/app/repository"
 
 	eventclient "github.com/proweb-zone/event-client"
@@ -40,4 +41,8 @@ func (a *AuthService) CreateToken(event *pb.Event) error {
 	a.repo.CreateAuth(userId, token)
 
 	return nil
+}
+
+func (a *AuthService) CheckAccessToken(token string) (*entity.Auth, error) {
+	return a.repo.CheckToken(token)
 }

@@ -28,14 +28,14 @@ func (d *DialogRepository) SendMsgUser(newMsg *entity.Dialog) (*entity.Dialog, e
 	}
 	defer tx.Rollback()
 
-	stmt, err := d.conn.PrepareContext(ctx, `INSERT INTO dialog (user_id_sender, user_id_recipient, msg) VALUES ($1, $2, $3) RETURNING id`)
+	stmt, err := d.conn.PrepareContext(ctx, `INSERT INTO dialog (user_id_sender, user_id_recipient, msg, state) VALUES ($1, $2, $3, $4) RETURNING id`)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
 	}
 	defer stmt.Close()
 
-	row := stmt.QueryRowContext(ctx, newMsg.User_id_sender, newMsg.User_id_recipient, newMsg.Msg)
+	row := stmt.QueryRowContext(ctx, newMsg.User_id_sender, newMsg.User_id_recipient, newMsg.Msg, newMsg.State)
 
 	err = tx.Commit()
 	if err != nil {
@@ -43,13 +43,15 @@ func (d *DialogRepository) SendMsgUser(newMsg *entity.Dialog) (*entity.Dialog, e
 		return nil, err
 	}
 
-	var newDialog entity.Dialog
-	err = row.Scan(&newDialog.ID)
+	var dialog entity.Dialog
+	row.Scan(&dialog.ID)
+	row = d.conn.QueryRow("SELECT id, user_id_sender, user_id_recipient, msg, state, created_at, updated_at FROM dialog WHERE id = $1", &dialog.ID)
+	err = row.Scan(&dialog.ID, &dialog.User_id_sender, &dialog.User_id_recipient, &dialog.Msg, &dialog.State, &dialog.CreatedAt, &dialog.Updated_at)
 	if err != nil {
 		return nil, fmt.Errorf("scanning result: %w", err)
 	}
 
-	return &newDialog, nil
+	return &dialog, nil
 }
 
 func (d *DialogRepository) GetDialogList(userIdSender int, userIdRecepient int) (*[]entity.Dialog, error) {
@@ -70,7 +72,7 @@ func (d *DialogRepository) GetDialogList(userIdSender int, userIdRecepient int) 
 
 	ctx := context.Background()
 
-	query := "SELECT id, user_id_sender, user_id_recipient, msg, created_at, updated_at FROM dialog WHERE user_id_sender = ANY($1) AND user_id_recipient = ANY($2) AND state = true"
+	query := "SELECT id, user_id_sender, user_id_recipient, msg, state, created_at, updated_at FROM dialog WHERE user_id_sender = ANY($1) AND user_id_recipient = ANY($2) AND state = true"
 
 	rows, err := d.conn.QueryContext(ctx, query, idsSenderValues[0], idsRecipientValues[0])
 	if err != nil {
@@ -81,7 +83,7 @@ func (d *DialogRepository) GetDialogList(userIdSender int, userIdRecepient int) 
 	var dialogList []entity.Dialog
 	for rows.Next() {
 		var dialog entity.Dialog
-		err := rows.Scan(&dialog.ID, &dialog.User_id_sender, &dialog.User_id_recipient, &dialog.Msg, &dialog.CreatedAt, &dialog.Updated_at)
+		err := rows.Scan(&dialog.ID, &dialog.User_id_sender, &dialog.User_id_recipient, &dialog.Msg, &dialog.State, &dialog.CreatedAt, &dialog.Updated_at)
 		if err != nil {
 			return nil, err
 		}

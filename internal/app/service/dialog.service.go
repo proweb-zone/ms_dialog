@@ -30,6 +30,7 @@ func (d *DialogService) SendMsgUser(requestDialog *dto.DialogRequestDto) (*entit
 		User_id_sender:    requestDialog.User_id_sender,
 		User_id_recipient: requestDialog.User_id_recipient,
 		Msg:               requestDialog.Msg,
+		State:             false,
 	})
 
 	if err != nil {

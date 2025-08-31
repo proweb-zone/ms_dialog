@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"ms_dialog/internal/app/entity"
 )
 
 type AuthRepository struct {
@@ -22,13 +23,17 @@ func (a *AuthRepository) CreateAuth(userId int, token string) error {
 	}
 
 	return nil
+}
 
-	// row := a.conn.QueryRow("SELECT token FROM auth WHERE token = $1", token)
+func (a *AuthRepository) CheckToken(token string) (*entity.Auth, error) {
+	row := a.conn.QueryRow("SELECT id, user_id, token, created_at FROM auth WHERE token = $1", token)
 
-	// errToken := row.Scan(&auth.Token)
-	// if errToken != nil {
-	// 	return nil, fmt.Errorf("Error get token in DB")
-	// }
+	var auth entity.Auth
+	err := row.Scan(&auth.ID, &auth.User_id, &auth.Token, &auth.CreatedAt)
 
-	// return &auth, nil
+	if err != nil {
+		return nil, err
+	}
+
+	return &auth, nil
 }
