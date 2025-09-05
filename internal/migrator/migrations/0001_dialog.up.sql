@@ -1,19 +1,17 @@
 CREATE TABLE dialog (
-    id SERIAL,
+    id SERIAL PRIMARY KEY,
     user_id_sender INTEGER,
 	  user_id_recipient INTEGER,
 	  msg TEXT,
     state BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    primary key (id, user_id_sender, user_id_recipient)
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE auth (
-    id SERIAL,
+    id SERIAL PRIMARY KEY,
     user_id INTEGER,
 	  token VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    primary key (id)
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

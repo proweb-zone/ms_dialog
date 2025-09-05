@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"ms_dialog/internal/app/entity"
 	"time"
@@ -36,9 +37,13 @@ func InitRedisDb() (*RedisDb, error) {
 	}, nil
 }
 
-func (r *RedisDb) AddMsg(userID int, msg string) error {
+func (r *RedisDb) AddMsg(dialog *entity.Dialog) error {
+	userID := dialog.User_id_sender
+	userIDFriend := dialog.User_id_recipient
+	msg := dialog.Msg
+
 	timeNow := time.Now().Unix()
-	key := fmt.Sprintf("user:%d:messages", userID)
+	key := fmt.Sprintf("user-%d:friend-%d:dialog", userID, userIDFriend)
 	ctx := context.Background()
 
 	prepairMsg := redis.Z{
@@ -57,23 +62,43 @@ func (r *RedisDb) AddMsg(userID int, msg string) error {
 	return nil
 }
 
-func (r *RedisDb) GetMessages(userIDs []int) ([]*entity.Posts, error) {
-	posts := make([]*entity.Posts, 0)
+func (r *RedisDb) GetMessages(userId int, userIdFriend int) (*[]*entity.Dialog, error) {
+	buildDialogs := make([]*entity.Dialog, 0)
 	ctx := context.Background()
-	for _, userID := range userIDs {
-		key := fmt.Sprintf("user:%d:messages", userID)
+	key := fmt.Sprintf("user-%d:friend-%d:dialog", userId, userIdFriend)
 
-		// Получаем последние 1000 сообщений
-		postsListRedis, err := r.Client.ZRevRangeWithScores(ctx, key, 0, 999).Result()
-		if err != nil {
-			return nil, err
-		}
-
-		for itemId, postItem := range postsListRedis {
-			//timestamp := time.Now().Unix()
-			posts = append(posts, &entity.Posts{ID: itemId, User_id: userID, Text: postItem.Member.(string)})
-		}
-
+	// Получаем последние 1000 сообщений
+	dialogsRedis, err := r.Client.ZRevRangeWithScores(ctx, key, 0, 999).Result()
+	if err != nil {
+		return nil, err
 	}
-	return posts, nil
+
+	for itemId, dialog := range dialogsRedis {
+		//timestamp := time.Now().Unix()
+		buildDialogs = append(buildDialogs, &entity.Dialog{ID: itemId, User_id_sender: userId, State: true, Msg: dialog.Member.(string)})
+	}
+
+	return &buildDialogs, nil
+}
+
+func (r *RedisDb) UdfGetMessages(userId int, userIdFriend int) (*[]entity.Dialog, error) {
+	ctx := context.Background()
+
+	dialogList, err := r.Client.FCall(ctx, "get_messages",
+		[]string{fmt.Sprintf("user-%d", userId), fmt.Sprintf("friend-%d", userIdFriend)}).Result()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get messages: %w", err)
+	}
+
+	var buildDialogs []entity.Dialog
+	if err := json.Unmarshal([]byte(dialogList.(string)), &buildDialogs); err != nil {
+		return nil, fmt.Errorf("failed to parse messages: %w", err)
+	}
+
+	reBuildDialogs := make([]entity.Dialog, 0)
+	for itemId, dialog := range buildDialogs {
+		reBuildDialogs = append(reBuildDialogs, entity.Dialog{ID: itemId, User_id_sender: userId, User_id_recipient: userIdFriend, State: true, Msg: dialog.Msg})
+	}
+
+	return &reBuildDialogs, nil
 }

@@ -97,31 +97,44 @@ func (d *DialogRepository) GetDialogList(userIdSender int, userIdRecepient int) 
 	return &dialogList, nil
 }
 
-func (d *DialogRepository) ActiveMsg(id int) error {
+func (d *DialogRepository) ActiveMsg(id int) (*entity.Dialog, error) {
 	ctx := context.Background()
 	tx, err := d.conn.BeginTx(ctx, nil)
 	if err != nil {
 		log.Fatal(err)
-		return err
+		return nil, err
 	}
 	defer tx.Rollback()
 
-	stmt, err := d.conn.PrepareContext(ctx, `UPDATE dialog SET state = true WHERE id = $1`)
+	stmt, err := d.conn.PrepareContext(ctx, `UPDATE dialog SET state = true WHERE id = $1 RETURNING *`)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return nil, err
 	}
 	defer stmt.Close()
 
-	stmt.QueryRowContext(ctx, id)
+	//stmt.QueryRowContext(ctx, id)
 
 	err = tx.Commit()
 	if err != nil {
 		log.Fatal(err)
-		return err
+		return nil, err
 	}
 
-	return nil
+	var dialog entity.Dialog
+	err = stmt.QueryRowContext(ctx, id).Scan(
+		&dialog.ID,
+		&dialog.User_id_sender,
+		&dialog.User_id_recipient,
+		&dialog.Msg,
+		&dialog.State,
+		&dialog.CreatedAt,
+		&dialog.Updated_at)
+	if err != nil {
+		return nil, fmt.Errorf("scanning result: %w", err)
+	}
+
+	return &dialog, nil
 }
 
 func (d *DialogRepository) DeleteMsg(id int) error {

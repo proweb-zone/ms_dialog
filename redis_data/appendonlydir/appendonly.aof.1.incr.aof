@@ -1,0 +1,1570 @@
+*2
+$6
+SELECT
+$1
+0
+*3
+$8
+FUNCTION
+$4
+LOAD
+$149
+#!lua name=test_lib
+local function hello(keys, args)
+    return "Hello, " .. (args[1] or "World") .. "!"
+end
+redis.register_function("hello", hello)
+
+*2
+$6
+SELECT
+$1
+0
+*3
+$8
+FUNCTION
+$4
+LOAD
+$895
+#!lua name=dialog_lib
+
+local function get_messages(keys, args)
+    local user_id = keys[1]
+    local friend_id = keys[2]
+    local limit = tonumber(args[1]) or 50
+    local offset = tonumber(args[2]) or 0
+
+    local dialog_key = 'user-' .. user_id .. ':friend-' .. friend_id .. ':dialog'
+
+    local total_messages = redis.call('LLEN', dialog_key)
+    local start_index = math.max(0, total_messages - limit - offset)
+    local end_index = math.max(-1, total_messages - 1 - offset)
+
+    if start_index > end_index then
+        return cjson.encode({})
+    end
+
+    local messages = redis.call('LRANGE', dialog_key, start_index, end_index)
+    local result = {}
+
+    for i, message_json in ipairs(messages) do
+        local message = cjson.decode(message_json)
+        table.insert(result, message)
+    end
+
+    return cjson.encode(result)
+end
+
+redis.register_function('get_messages', get_messages)
+
+*4
+$4
+zadd
+$22
+user-1:friend-2:dialog
+$10
+1757090288
+$3
+111
+*4
+$4
+zadd
+$22
+user-1:friend-2:dialog
+$10
+1757092156
+$3
+222
+*2
+$6
+SELECT
+$1
+0
+*4
+$8
+FUNCTION
+$4
+LOAD
+$7
+REPLACE
+$957
+#!lua name=dialog_lib
+
+local function get_messages(keys, args)
+    local user_id = keys[1]
+    local friend_id = keys[2]
+    local limit = tonumber(args[1]) or 50
+    local offset = tonumber(args[2]) or 0
+
+    local dialog_key = 'user-' .. user_id .. ':friend-' .. friend_id .. ':dialog'
+
+    redis.log(redis.LOG_DEBUG, "Dialog key: " .. dialog_key)
+
+    local total_messages = redis.call('LLEN', dialog_key)
+    local start_index = math.max(0, total_messages - limit - offset)
+    local end_index = math.max(-1, total_messages - 1 - offset)
+
+    if start_index > end_index then
+        return cjson.encode({})
+    end
+
+    local messages = redis.call('LRANGE', dialog_key, start_index, end_index)
+    local result = {}
+
+    for i, message_json in ipairs(messages) do
+        local message = cjson.decode(message_json)
+        table.insert(result, message)
+    end
+
+    return cjson.encode(result)
+end
+
+redis.register_function('get_messages', get_messages)
+
+*4
+$4
+zadd
+$22
+user-1:friend-2:dialog
+$10
+1757093090
+$3
+222
+*4
+$8
+FUNCTION
+$4
+LOAD
+$7
+REPLACE
+$1022
+#!lua name=dialog_lib
+
+local function get_messages(keys, args)
+    local user_id = keys[1]
+    local friend_id = keys[2]
+    local limit = tonumber(args[1]) or 50
+    local offset = tonumber(args[2]) or 0
+
+    local dialog_key = 'user-' .. user_id .. ':friend-' .. friend_id .. ':dialog'
+
+    redis.log(redis.LOG_DEBUG, "Dialog key: " .. dialog_key)
+
+    local total_messages = redis.call('LLEN', dialog_key)
+
+    redis.log(redis.LOG_DEBUG, "Len msgs: " .. total_messages)
+
+    local start_index = math.max(0, total_messages - limit - offset)
+    local end_index = math.max(-1, total_messages - 1 - offset)
+
+    if start_index > end_index then
+        return cjson.encode({})
+    end
+
+    local messages = redis.call('LRANGE', dialog_key, start_index, end_index)
+    local result = {}
+
+    for i, message_json in ipairs(messages) do
+        local message = cjson.decode(message_json)
+        table.insert(result, message)
+    end
+
+    return cjson.encode(result)
+end
+
+redis.register_function('get_messages', get_messages)
+
+*4
+$4
+zadd
+$22
+user-1:friend-2:dialog
+$10
+1757093582
+$3
+222
+*4
+$8
+FUNCTION
+$4
+LOAD
+$7
+REPLACE
+$678
+#!lua name=dialog_lib
+
+local function get_messages(keys, args)
+    local user_id = keys[1]
+    local friend_id = keys[2]
+    local limit = tonumber(args[1]) or 50
+    local offset = tonumber(args[2]) or 0
+
+    local dialog_key = 'user-' .. user_id .. ':friend-' .. friend_id .. ':dialog'
+
+    local total_messages = redis.call('GET', dialog_key)
+
+    if not total_messages then
+    return cjson.encode({})
+  end
+
+    local result = {}
+
+    for i, message_json in ipairs(total_messages) do
+        local message = cjson.decode(message_json)
+        table.insert(result, message)
+    end
+
+    return cjson.encode(result)
+end
+
+redis.register_function('get_messages', get_messages)
+
+*2
+$6
+SELECT
+$1
+0
+*4
+$8
+FUNCTION
+$4
+LOAD
+$7
+REPLACE
+$678
+#!lua name=dialog_lib
+
+local function get_messages(keys, args)
+    local user_id = keys[1]
+    local friend_id = keys[2]
+    local limit = tonumber(args[1]) or 50
+    local offset = tonumber(args[2]) or 0
+
+    local dialog_key = 'user-' .. user_id .. ':friend-' .. friend_id .. ':dialog'
+
+    local total_messages = redis.call('GET', dialog_key)
+
+    if not total_messages then
+    return cjson.encode({})
+  end
+
+    local result = {}
+
+    for i, message_json in ipairs(total_messages) do
+        local message = cjson.decode(message_json)
+        table.insert(result, message)
+    end
+
+    return cjson.encode(result)
+end
+
+redis.register_function('get_messages', get_messages)
+
+*4
+$4
+zadd
+$22
+user-1:friend-2:dialog
+$10
+1757094535
+$3
+222
+*4
+$8
+FUNCTION
+$4
+LOAD
+$7
+REPLACE
+$708
+#!lua name=dialog_lib
+
+local function get_messages(keys, args)
+    local user_id = keys[1]
+    local friend_id = keys[2]
+    local limit = tonumber(args[1]) or 50
+    local offset = tonumber(args[2]) or 0
+
+    local dialog_key = 'user-' .. user_id .. ':friend-' .. friend_id .. ':dialog'
+
+    local total_messages = redis.call('GET', dialog_key)
+
+    if not total_messages then
+    return cjson.encode({})
+    end
+
+    local result = {}
+
+    for i, message_json in ipairs(total_messages) do
+        print(message_json)
+        local message = cjson.decode(message_json)
+        table.insert(result, message)
+    end
+
+    return cjson.encode(result)
+end
+
+redis.register_function('get_messages', get_messages)
+
+*4
+$4
+zadd
+$22
+user-1:friend-2:dialog
+$10
+1757094897
+$3
+222
+*4
+$4
+zadd
+$22
+user-1:friend-2:dialog
+$10
+1757094923
+$3
+222
+*2
+$6
+SELECT
+$1
+0
+*3
+$8
+FUNCTION
+$6
+DELETE
+$10
+dialog_lib
+*3
+$8
+FUNCTION
+$4
+LOAD
+$708
+#!lua name=dialog_lib
+
+local function get_messages(keys, args)
+    local user_id = keys[1]
+    local friend_id = keys[2]
+    local limit = tonumber(args[1]) or 50
+    local offset = tonumber(args[2]) or 0
+
+    local dialog_key = 'user-' .. user_id .. ':friend-' .. friend_id .. ':dialog'
+
+    local total_messages = redis.call('GET', dialog_key)
+
+    if not total_messages then
+    return cjson.encode({})
+    end
+
+    local result = {}
+
+    for i, message_json in ipairs(total_messages) do
+        print(message_json)
+        local message = cjson.decode(message_json)
+        table.insert(result, message)
+    end
+
+    return cjson.encode(result)
+end
+
+redis.register_function('get_messages', get_messages)
+
+*3
+$8
+FUNCTION
+$6
+DELETE
+$10
+dialog_lib
+*3
+$8
+FUNCTION
+$4
+LOAD
+$1104
+#!lua name=dialog_lib
+
+local function get_messages(keys, args)
+   -- get_all_messages.lua
+  local user_id = KEYS[1]
+  local friend_id = KEYS[2]
+
+  local dialog_key = 'user-' .. user_id .. ':friend-' .. friend_id .. ':dialog'
+
+  -- Проверяем существование ключа
+  if redis.call('EXISTS', dialog_key) == 0 then
+    return cjson.encode({error = "Диалог не найден", code = 404})
+  end
+
+  -- Получаем все сообщения из списка
+  local messages = redis.call('LRANGE', dialog_key, 0, -1)
+
+  -- Преобразуем JSON строки в таблицы и добавляем дополнительную информацию
+  local result = {
+    total_count = #messages,
+    messages = {},
+    dialog_key = dialog_key
+  }
+
+  for i, message_json in ipairs(messages) do
+    local message_data = cjson.decode(message_json)
+    table.insert(result.messages, {
+        index = i,
+        message = message_data,
+        raw_json = message_json
+    })
+  end
+
+  return cjson.encode(result)
+end
+
+redis.register_function('get_messages', get_messages)
+
+*3
+$8
+FUNCTION
+$6
+DELETE
+$10
+dialog_lib
+*3
+$8
+FUNCTION
+$4
+LOAD
+$1104
+#!lua name=dialog_lib
+
+local function get_messages(keys, args)
+   -- get_all_messages.lua
+  local user_id = keys[1]
+  local friend_id = keys[2]
+
+  local dialog_key = 'user-' .. user_id .. ':friend-' .. friend_id .. ':dialog'
+
+  -- Проверяем существование ключа
+  if redis.call('EXISTS', dialog_key) == 0 then
+    return cjson.encode({error = "Диалог не найден", code = 404})
+  end
+
+  -- Получаем все сообщения из списка
+  local messages = redis.call('LRANGE', dialog_key, 0, -1)
+
+  -- Преобразуем JSON строки в таблицы и добавляем дополнительную информацию
+  local result = {
+    total_count = #messages,
+    messages = {},
+    dialog_key = dialog_key
+  }
+
+  for i, message_json in ipairs(messages) do
+    local message_data = cjson.decode(message_json)
+    table.insert(result.messages, {
+        index = i,
+        message = message_data,
+        raw_json = message_json
+    })
+  end
+
+  return cjson.encode(result)
+end
+
+redis.register_function('get_messages', get_messages)
+
+*3
+$8
+FUNCTION
+$6
+DELETE
+$10
+dialog_lib
+*3
+$8
+FUNCTION
+$4
+LOAD
+$1090
+#!lua name=dialog_lib
+
+local function get_messages(keys, args)
+   -- get_all_messages.lua
+  local user_id = keys[1]
+  local friend_id = keys[2]
+
+  local dialog_key = user_id .. ':' .. friend_id .. ':dialog'
+
+  -- Проверяем существование ключа
+  if redis.call('EXISTS', dialog_key) == 0 then
+    return cjson.encode({error = "Диалог не найден", code = 404})
+  end
+
+  -- Получаем все сообщения из списка
+  local messages = redis.call('LRANGE', dialog_key, 0, -1)
+
+  -- Преобразуем JSON строки в таблицы и добавляем дополнительную информацию
+  local result = {
+    total_count = #messages,
+    messages = {},
+    dialog_key = dialog_key
+  }
+
+  for i, message_json in ipairs(messages) do
+    local message_data = cjson.decode(message_json)
+      table.insert(result.messages, {
+        index = i,
+        message = message_data,
+        raw_json = message_json
+      })
+  end
+
+  return cjson.encode(result)
+end
+
+redis.register_function('get_messages', get_messages)
+
+*3
+$8
+FUNCTION
+$6
+DELETE
+$10
+dialog_lib
+*3
+$8
+FUNCTION
+$4
+LOAD
+$1074
+#!lua name=dialog_lib
+
+local function get_messages(keys, args)
+   -- get_all_messages.lua
+  local user_id = keys[1]
+  local friend_id = keys[2]
+
+  local dialog_key = 'user-1:friend-2:dialog'
+
+  -- Проверяем существование ключа
+  if redis.call('EXISTS', dialog_key) == 0 then
+    return cjson.encode({error = "Диалог не найден", code = 404})
+  end
+
+  -- Получаем все сообщения из списка
+  local messages = redis.call('LRANGE', dialog_key, 0, -1)
+
+  -- Преобразуем JSON строки в таблицы и добавляем дополнительную информацию
+  local result = {
+    total_count = #messages,
+    messages = {},
+    dialog_key = dialog_key
+  }
+
+  for i, message_json in ipairs(messages) do
+    local message_data = cjson.decode(message_json)
+      table.insert(result.messages, {
+        index = i,
+        message = message_data,
+        raw_json = message_json
+      })
+  end
+
+  return cjson.encode(result)
+end
+
+redis.register_function('get_messages', get_messages)
+
+*3
+$8
+FUNCTION
+$6
+DELETE
+$10
+dialog_lib
+*3
+$8
+FUNCTION
+$4
+LOAD
+$1075
+#!lua name=dialog_lib
+
+local function get_messages(keys, args)
+   -- get_all_messages.lua
+  local user_id = keys[1]
+  local friend_id = keys[2]
+
+  local dialog_key = 'user-1:friend-2:dialog'
+
+  -- Проверяем существование ключа
+  if redis.call('EXISTS', dialog_key) == 0 then
+    return cjson.encode({error = "Диалог не найден", code = 404})
+  end
+
+  -- Получаем все сообщения из списка
+  local messages = redis.call('LRANGE', dialog_key, 100, 0)
+
+  -- Преобразуем JSON строки в таблицы и добавляем дополнительную информацию
+  local result = {
+    total_count = #messages,
+    messages = {},
+    dialog_key = dialog_key
+  }
+
+  for i, message_json in ipairs(messages) do
+    local message_data = cjson.decode(message_json)
+      table.insert(result.messages, {
+        index = i,
+        message = message_data,
+        raw_json = message_json
+      })
+  end
+
+  return cjson.encode(result)
+end
+
+redis.register_function('get_messages', get_messages)
+
+*3
+$8
+FUNCTION
+$6
+DELETE
+$10
+dialog_lib
+*3
+$8
+FUNCTION
+$4
+LOAD
+$1069
+#!lua name=dialog_lib
+
+local function get_messages(keys)
+   -- get_all_messages.lua
+  local user_id = keys[1]
+  local friend_id = keys[2]
+
+  local dialog_key = 'user-1:friend-2:dialog'
+
+  -- Проверяем существование ключа
+  if redis.call('EXISTS', dialog_key) == 0 then
+    return cjson.encode({error = "Диалог не найден", code = 404})
+  end
+
+  -- Получаем все сообщения из списка
+  local messages = redis.call('LRANGE', dialog_key, 100, 0)
+
+  -- Преобразуем JSON строки в таблицы и добавляем дополнительную информацию
+  local result = {
+    total_count = #messages,
+    messages = {},
+    dialog_key = dialog_key
+  }
+
+  for i, message_json in ipairs(messages) do
+    local message_data = cjson.decode(message_json)
+      table.insert(result.messages, {
+        index = i,
+        message = message_data,
+        raw_json = message_json
+      })
+  end
+
+  return cjson.encode(result)
+end
+
+redis.register_function('get_messages', get_messages)
+
+*3
+$8
+FUNCTION
+$6
+DELETE
+$10
+dialog_lib
+*3
+$8
+FUNCTION
+$4
+LOAD
+$1058
+#!lua name=dialog_lib
+
+local function get_messages(keys)
+   -- get_all_messages.lua
+  local user_id = keys[1]
+  local friend_id = keys[2]
+
+  local dialog_key = 'user-1:friend-2:dialog'
+
+  -- Проверяем существование ключа
+  if redis.call('EXISTS', dialog_key) == 0 then
+    return cjson.encode({error = "Диалог не найден", code = 404})
+  end
+
+  -- Получаем все сообщения из списка
+  local messages = redis.call('GET', dialog_key)
+
+  -- Преобразуем JSON строки в таблицы и добавляем дополнительную информацию
+  local result = {
+    total_count = #messages,
+    messages = {},
+    dialog_key = dialog_key
+  }
+
+  for i, message_json in ipairs(messages) do
+    local message_data = cjson.decode(message_json)
+      table.insert(result.messages, {
+        index = i,
+        message = message_data,
+        raw_json = message_json
+      })
+  end
+
+  return cjson.encode(result)
+end
+
+redis.register_function('get_messages', get_messages)
+
+*3
+$8
+FUNCTION
+$6
+DELETE
+$10
+dialog_lib
+*3
+$8
+FUNCTION
+$4
+LOAD
+$2175
+#!lua name=dialog_lib
+
+local function get_messages(keys, args)
+   -- get_all_messages.lua
+  local user_id = keys[1]
+  local friend_id = keys[2]
+
+  local dialog_key = 'user-1:friend-2:dialog'
+
+  -- Проверяем существование ключа
+  if redis.call('EXISTS', dialog_key) == 0 then
+    return cjson.encode({error = "Диалог не найден", code = 404})
+  end
+
+ -- Проверяем тип ключа
+    local key_type = redis.call('TYPE', dialog_key).ok
+    if key_type ~= 'zset' then
+        return cjson.encode({
+            error = "Ожидался zset, но получен: " .. key_type,
+            code = 400
+        })
+    end
+
+    -- Получаем все элементы из zset с scores
+    -- ZRANGE key 0 -1 WITHSCORES
+    local messages_with_scores = redis.call('ZRANGE', dialog_key, 0, -1, 'WITHSCORES')
+
+    -- Обрабатываем результаты
+    local result_messages = {}
+
+    for i = 1, #messages_with_scores, 2 do
+        local message_json = messages_with_scores[i]
+        local score = messages_with_scores[i + 1]
+
+        local success, message_data = pcall(cjson.decode, message_json)
+
+        if success then
+            table.insert(result_messages, {
+                score = tonumber(score),
+                timestamp = tonumber(score), -- обычно score = timestamp
+                message = message_data,
+                raw_json = message_json
+            })
+        else
+            table.insert(result_messages, {
+                score = tonumber(score),
+                raw_data = message_json,
+                error = "Invalid JSON"
+            })
+        end
+    end
+
+    -- Сортируем по score (времени)
+    table.sort(result_messages, function(a, b)
+        return a.score < b.score  -- по возрастанию времени
+    end)
+
+    local result = {
+        success = true,
+        total_count = #result_messages,
+        key_type = key_type,
+        dialog_key = dialog_key,
+        messages = result_messages,
+        timestamp = redis.call('TIME')[1]
+    }
+
+    return cjson.encode(result)
+end
+
+redis.register_function('get_messages', get_messages)
+
+*3
+$8
+FUNCTION
+$6
+DELETE
+$10
+dialog_lib
+*3
+$8
+FUNCTION
+$4
+LOAD
+$2209
+#!lua name=dialog_lib
+
+local function get_messages(keys, args)
+   -- get_all_messages.lua
+  local user_id = keys[1]
+  local friend_id = keys[2]
+
+  local dialog_key = 'user-' .. user_id .. ':friend-' .. friend_id .. ':dialog'
+
+  -- Проверяем существование ключа
+  if redis.call('EXISTS', dialog_key) == 0 then
+    return cjson.encode({error = "Диалог не найден", code = 404})
+  end
+
+ -- Проверяем тип ключа
+    local key_type = redis.call('TYPE', dialog_key).ok
+    if key_type ~= 'zset' then
+        return cjson.encode({
+            error = "Ожидался zset, но получен: " .. key_type,
+            code = 400
+        })
+    end
+
+    -- Получаем все элементы из zset с scores
+    -- ZRANGE key 0 -1 WITHSCORES
+    local messages_with_scores = redis.call('ZRANGE', dialog_key, 0, -1, 'WITHSCORES')
+
+    -- Обрабатываем результаты
+    local result_messages = {}
+
+    for i = 1, #messages_with_scores, 2 do
+        local message_json = messages_with_scores[i]
+        local score = messages_with_scores[i + 1]
+
+        local success, message_data = pcall(cjson.decode, message_json)
+
+        if success then
+            table.insert(result_messages, {
+                score = tonumber(score),
+                timestamp = tonumber(score), -- обычно score = timestamp
+                message = message_data,
+                raw_json = message_json
+            })
+        else
+            table.insert(result_messages, {
+                score = tonumber(score),
+                raw_data = message_json,
+                error = "Invalid JSON"
+            })
+        end
+    end
+
+    -- Сортируем по score (времени)
+    table.sort(result_messages, function(a, b)
+        return a.score < b.score  -- по возрастанию времени
+    end)
+
+    local result = {
+        success = true,
+        total_count = #result_messages,
+        key_type = key_type,
+        dialog_key = dialog_key,
+        messages = result_messages,
+        timestamp = redis.call('TIME')[1]
+    }
+
+    return cjson.encode(result)
+end
+
+redis.register_function('get_messages', get_messages)
+
+*3
+$8
+FUNCTION
+$6
+DELETE
+$10
+dialog_lib
+*3
+$8
+FUNCTION
+$4
+LOAD
+$2191
+#!lua name=dialog_lib
+
+local function get_messages(keys, args)
+   -- get_all_messages.lua
+  local user_id = keys[1]
+  local friend_id = keys[2]
+
+  local dialog_key = user_id .. ':' .. friend_id .. ':dialog'
+
+  -- Проверяем существование ключа
+  if redis.call('EXISTS', dialog_key) == 0 then
+    return cjson.encode({error = "Диалог не найден", code = 404})
+  end
+
+ -- Проверяем тип ключа
+    local key_type = redis.call('TYPE', dialog_key).ok
+    if key_type ~= 'zset' then
+        return cjson.encode({
+            error = "Ожидался zset, но получен: " .. key_type,
+            code = 400
+        })
+    end
+
+    -- Получаем все элементы из zset с scores
+    -- ZRANGE key 0 -1 WITHSCORES
+    local messages_with_scores = redis.call('ZRANGE', dialog_key, 0, -1, 'WITHSCORES')
+
+    -- Обрабатываем результаты
+    local result_messages = {}
+
+    for i = 1, #messages_with_scores, 2 do
+        local message_json = messages_with_scores[i]
+        local score = messages_with_scores[i + 1]
+
+        local success, message_data = pcall(cjson.decode, message_json)
+
+        if success then
+            table.insert(result_messages, {
+                score = tonumber(score),
+                timestamp = tonumber(score), -- обычно score = timestamp
+                message = message_data,
+                raw_json = message_json
+            })
+        else
+            table.insert(result_messages, {
+                score = tonumber(score),
+                raw_data = message_json,
+                error = "Invalid JSON"
+            })
+        end
+    end
+
+    -- Сортируем по score (времени)
+    table.sort(result_messages, function(a, b)
+        return a.score < b.score  -- по возрастанию времени
+    end)
+
+    local result = {
+        success = true,
+        total_count = #result_messages,
+        key_type = key_type,
+        dialog_key = dialog_key,
+        messages = result_messages,
+        timestamp = redis.call('TIME')[1]
+    }
+
+    return cjson.encode(result)
+end
+
+redis.register_function('get_messages', get_messages)
+
+*3
+$8
+FUNCTION
+$6
+DELETE
+$10
+dialog_lib
+*3
+$8
+FUNCTION
+$4
+LOAD
+$2224
+#!lua name=dialog_lib
+
+local function get_messages(keys, args)
+   -- get_all_messages.lua
+  local user_id = keys[1]
+  local friend_id = keys[2]
+
+  local dialog_key = user_id .. ':' .. friend_id .. ':dialog'
+
+  -- Проверяем существование ключа
+  if redis.call('EXISTS', dialog_key) == 0 then
+    return cjson.encode({error = "Диалог не найден", code = 404})
+  end
+
+ -- Проверяем тип ключа
+    local key_type = redis.call('TYPE', dialog_key).ok
+    if key_type ~= 'zset' then
+        return cjson.encode({
+            error = "Ожидался zset, но получен: " .. key_type,
+            code = 400
+        })
+    end
+
+    -- Получаем все элементы из zset с scores
+    -- ZRANGE key 0 -1 WITHSCORES
+    local messages_with_scores = redis.call('ZRANGE', dialog_key, 0, -1, 'WITHSCORES')
+
+    -- Обрабатываем результаты
+    local result_messages = {}
+
+    for i = 1, #messages_with_scores, 2 do
+        local message_json = messages_with_scores[i]
+        local score = messages_with_scores[i + 1]
+
+        local success, message_data = pcall(cjson.decode, message_json)
+
+        if success then
+            table.insert(result_messages, {
+                score = tonumber(score),
+                timestamp = tonumber(score), -- обычно score = timestamp
+                message = message_data,
+                raw_json = message_json
+            })
+        else
+            table.insert(result_messages, {
+                score = tonumber(score),
+                raw_data = message_json,
+                error = "Invalid JSON"
+            })
+        end
+    end
+
+    -- Сортируем по score (времени)
+    table.sort(result_messages, function(a, b)
+        return a.score < b.score  -- по возрастанию времени
+    end)
+
+    -- local result = {
+    --     success = true,
+    --     total_count = #result_messages,
+    --     key_type = key_type,
+    --     dialog_key = dialog_key,
+    --     messages = result_messages,
+    --     timestamp = redis.call('TIME')[1]
+    -- }
+
+    return cjson.encode(result_messages)
+end
+
+redis.register_function('get_messages', get_messages)
+
+*3
+$8
+FUNCTION
+$6
+DELETE
+$10
+dialog_lib
+*3
+$8
+FUNCTION
+$4
+LOAD
+$2220
+#!lua name=dialog_lib
+
+local function get_messages(keys, args)
+   -- get_all_messages.lua
+  local user_id = keys[1]
+  local friend_id = keys[2]
+
+  local dialog_key = user_id .. ':' .. friend_id .. ':dialog'
+
+  -- Проверяем существование ключа
+  if redis.call('EXISTS', dialog_key) == 0 then
+    return cjson.encode({error = "Диалог не найден", code = 404})
+  end
+
+ -- Проверяем тип ключа
+    local key_type = redis.call('TYPE', dialog_key).ok
+    if key_type ~= 'zset' then
+        return cjson.encode({
+            error = "Ожидался zset, но получен: " .. key_type,
+            code = 400
+        })
+    end
+
+    -- Получаем все элементы из zset с scores
+    -- ZRANGE key 0 -1 WITHSCORES
+    local messages_with_scores = redis.call('ZRANGE', dialog_key, 0, -1, 'WITHSCORES')
+
+    -- Обрабатываем результаты
+    local result_messages = {}
+
+    for i = 1, #messages_with_scores, 2 do
+        local message_json = messages_with_scores[i]
+        local score = messages_with_scores[i + 1]
+
+        local success, message_data = pcall(cjson.decode, message_json)
+
+        if success then
+            table.insert(result_messages, {
+                score = tonumber(score),
+                timestamp = tonumber(score), -- обычно score = timestamp
+                msg = message_data,
+                raw_json = message_json
+            })
+        else
+            table.insert(result_messages, {
+                score = tonumber(score),
+                raw_data = message_json,
+                error = "Invalid JSON"
+            })
+        end
+    end
+
+    -- Сортируем по score (времени)
+    table.sort(result_messages, function(a, b)
+        return a.score < b.score  -- по возрастанию времени
+    end)
+
+    -- local result = {
+    --     success = true,
+    --     total_count = #result_messages,
+    --     key_type = key_type,
+    --     dialog_key = dialog_key,
+    --     messages = result_messages,
+    --     timestamp = redis.call('TIME')[1]
+    -- }
+
+    return cjson.encode(result_messages)
+end
+
+redis.register_function('get_messages', get_messages)
+
+*3
+$8
+FUNCTION
+$6
+DELETE
+$10
+dialog_lib
+*3
+$8
+FUNCTION
+$4
+LOAD
+$2220
+#!lua name=dialog_lib
+
+local function get_messages(keys, args)
+   -- get_all_messages.lua
+  local user_id = keys[1]
+  local friend_id = keys[2]
+
+  local dialog_key = user_id .. ':' .. friend_id .. ':dialog'
+
+  -- Проверяем существование ключа
+  if redis.call('EXISTS', dialog_key) == 0 then
+    return cjson.encode({error = "Диалог не найден", code = 404})
+  end
+
+ -- Проверяем тип ключа
+    local key_type = redis.call('TYPE', dialog_key).ok
+    if key_type ~= 'zset' then
+        return cjson.encode({
+            error = "Ожидался zset, но получен: " .. key_type,
+            code = 400
+        })
+    end
+
+    -- Получаем все элементы из zset с scores
+    -- ZRANGE key 0 -1 WITHSCORES
+    local messages_with_scores = redis.call('ZRANGE', dialog_key, 0, -1, 'WITHSCORES')
+
+    -- Обрабатываем результаты
+    local result_messages = {}
+
+    for i = 1, #messages_with_scores, 2 do
+        local message_json = messages_with_scores[i]
+        local score = messages_with_scores[i + 1]
+
+        local success, message_data = pcall(cjson.decode, message_json)
+
+        if success then
+            table.insert(result_messages, {
+                score = tonumber(score),
+                timestamp = tonumber(score), -- обычно score = timestamp
+                Msg = message_data,
+                raw_json = message_json
+            })
+        else
+            table.insert(result_messages, {
+                score = tonumber(score),
+                raw_data = message_json,
+                error = "Invalid JSON"
+            })
+        end
+    end
+
+    -- Сортируем по score (времени)
+    table.sort(result_messages, function(a, b)
+        return a.score < b.score  -- по возрастанию времени
+    end)
+
+    -- local result = {
+    --     success = true,
+    --     total_count = #result_messages,
+    --     key_type = key_type,
+    --     dialog_key = dialog_key,
+    --     messages = result_messages,
+    --     timestamp = redis.call('TIME')[1]
+    -- }
+
+    return cjson.encode(result_messages)
+end
+
+redis.register_function('get_messages', get_messages)
+
+*3
+$8
+FUNCTION
+$6
+DELETE
+$10
+dialog_lib
+*3
+$8
+FUNCTION
+$4
+LOAD
+$2220
+#!lua name=dialog_lib
+
+local function get_messages(keys, args)
+   -- get_all_messages.lua
+  local user_id = keys[1]
+  local friend_id = keys[2]
+
+  local dialog_key = user_id .. ':' .. friend_id .. ':dialog'
+
+  -- Проверяем существование ключа
+  if redis.call('EXISTS', dialog_key) == 0 then
+    return cjson.encode({error = "Диалог не найден", code = 404})
+  end
+
+ -- Проверяем тип ключа
+    local key_type = redis.call('TYPE', dialog_key).ok
+    if key_type ~= 'zset' then
+        return cjson.encode({
+            error = "Ожидался zset, но получен: " .. key_type,
+            code = 400
+        })
+    end
+
+    -- Получаем все элементы из zset с scores
+    -- ZRANGE key 0 -1 WITHSCORES
+    local messages_with_scores = redis.call('ZRANGE', dialog_key, 0, -1, 'WITHSCORES')
+
+    -- Обрабатываем результаты
+    local result_messages = {}
+
+    for i = 1, #messages_with_scores, 2 do
+        local message_json = messages_with_scores[i]
+        local score = messages_with_scores[i + 1]
+
+        local success, message_data = pcall(cjson.decode, message_json)
+
+        if success then
+            table.insert(result_messages, {
+                score = tonumber(score),
+                timestamp = tonumber(score), -- обычно score = timestamp
+                msg = message_data,
+                raw_json = message_json
+            })
+        else
+            table.insert(result_messages, {
+                score = tonumber(score),
+                raw_data = message_json,
+                error = "Invalid JSON"
+            })
+        end
+    end
+
+    -- Сортируем по score (времени)
+    table.sort(result_messages, function(a, b)
+        return a.score < b.score  -- по возрастанию времени
+    end)
+
+    -- local result = {
+    --     success = true,
+    --     total_count = #result_messages,
+    --     key_type = key_type,
+    --     dialog_key = dialog_key,
+    --     messages = result_messages,
+    --     timestamp = redis.call('TIME')[1]
+    -- }
+
+    return cjson.encode(result_messages)
+end
+
+redis.register_function('get_messages', get_messages)
+
+*3
+$8
+FUNCTION
+$6
+DELETE
+$10
+dialog_lib
+*3
+$8
+FUNCTION
+$4
+LOAD
+$2232
+#!lua name=dialog_lib
+
+local function get_messages(keys, args)
+   -- get_all_messages.lua
+  local user_id = keys[1]
+  local friend_id = keys[2]
+
+  local dialog_key = user_id .. ':' .. friend_id .. ':dialog'
+
+  -- Проверяем существование ключа
+  if redis.call('EXISTS', dialog_key) == 0 then
+    return cjson.encode({error = "Диалог не найден", code = 404})
+  end
+
+ -- Проверяем тип ключа
+    local key_type = redis.call('TYPE', dialog_key).ok
+    if key_type ~= 'zset' then
+        return cjson.encode({
+            error = "Ожидался zset, но получен: " .. key_type,
+            code = 400
+        })
+    end
+
+    -- Получаем все элементы из zset с scores
+    -- ZRANGE key 0 -1 WITHSCORES
+    local messages_with_scores = redis.call('ZRANGE', dialog_key, 0, -1, 'WITHSCORES')
+
+    -- Обрабатываем результаты
+    local result_messages = {}
+
+    for i = 1, #messages_with_scores, 2 do
+        local message_json = messages_with_scores[i]
+        local score = messages_with_scores[i + 1]
+
+        local success, message_data = pcall(cjson.decode, message_json)
+
+        if success then
+            table.insert(result_messages, {
+                score = tonumber(score),
+                timestamp = tonumber(score), -- обычно score = timestamp
+                msg = '"' ..message_data.. '"',
+                raw_json = message_json
+            })
+        else
+            table.insert(result_messages, {
+                score = tonumber(score),
+                raw_data = message_json,
+                error = "Invalid JSON"
+            })
+        end
+    end
+
+    -- Сортируем по score (времени)
+    table.sort(result_messages, function(a, b)
+        return a.score < b.score  -- по возрастанию времени
+    end)
+
+    -- local result = {
+    --     success = true,
+    --     total_count = #result_messages,
+    --     key_type = key_type,
+    --     dialog_key = dialog_key,
+    --     messages = result_messages,
+    --     timestamp = redis.call('TIME')[1]
+    -- }
+
+    return cjson.encode(result_messages)
+end
+
+redis.register_function('get_messages', get_messages)
+
+*3
+$8
+FUNCTION
+$6
+DELETE
+$10
+dialog_lib
+*3
+$8
+FUNCTION
+$4
+LOAD
+$2220
+#!lua name=dialog_lib
+
+local function get_messages(keys, args)
+   -- get_all_messages.lua
+  local user_id = keys[1]
+  local friend_id = keys[2]
+
+  local dialog_key = user_id .. ':' .. friend_id .. ':dialog'
+
+  -- Проверяем существование ключа
+  if redis.call('EXISTS', dialog_key) == 0 then
+    return cjson.encode({error = "Диалог не найден", code = 404})
+  end
+
+ -- Проверяем тип ключа
+    local key_type = redis.call('TYPE', dialog_key).ok
+    if key_type ~= 'zset' then
+        return cjson.encode({
+            error = "Ожидался zset, но получен: " .. key_type,
+            code = 400
+        })
+    end
+
+    -- Получаем все элементы из zset с scores
+    -- ZRANGE key 0 -1 WITHSCORES
+    local messages_with_scores = redis.call('ZRANGE', dialog_key, 0, -1, 'WITHSCORES')
+
+    -- Обрабатываем результаты
+    local result_messages = {}
+
+    for i = 1, #messages_with_scores, 2 do
+        local message_json = messages_with_scores[i]
+        local score = messages_with_scores[i + 1]
+
+        local success, message_data = pcall(cjson.decode, message_json)
+
+        if success then
+            table.insert(result_messages, {
+                score = tonumber(score),
+                timestamp = tonumber(score), -- обычно score = timestamp
+                msg = message_data,
+                raw_json = message_json
+            })
+        else
+            table.insert(result_messages, {
+                score = tonumber(score),
+                raw_data = message_json,
+                error = "Invalid JSON"
+            })
+        end
+    end
+
+    -- Сортируем по score (времени)
+    table.sort(result_messages, function(a, b)
+        return a.score < b.score  -- по возрастанию времени
+    end)
+
+    -- local result = {
+    --     success = true,
+    --     total_count = #result_messages,
+    --     key_type = key_type,
+    --     dialog_key = dialog_key,
+    --     messages = result_messages,
+    --     timestamp = redis.call('TIME')[1]
+    -- }
+
+    return cjson.encode(result_messages)
+end
+
+redis.register_function('get_messages', get_messages)
+
+*3
+$8
+FUNCTION
+$6
+DELETE
+$10
+dialog_lib
+*3
+$8
+FUNCTION
+$4
+LOAD
+$2230
+#!lua name=dialog_lib
+
+local function get_messages(keys, args)
+   -- get_all_messages.lua
+  local user_id = keys[1]
+  local friend_id = keys[2]
+
+  local dialog_key = user_id .. ':' .. friend_id .. ':dialog'
+
+  -- Проверяем существование ключа
+  if redis.call('EXISTS', dialog_key) == 0 then
+    return cjson.encode({error = "Диалог не найден", code = 404})
+  end
+
+ -- Проверяем тип ключа
+    local key_type = redis.call('TYPE', dialog_key).ok
+    if key_type ~= 'zset' then
+        return cjson.encode({
+            error = "Ожидался zset, но получен: " .. key_type,
+            code = 400
+        })
+    end
+
+    -- Получаем все элементы из zset с scores
+    -- ZRANGE key 0 -1 WITHSCORES
+    local messages_with_scores = redis.call('ZRANGE', dialog_key, 0, -1, 'WITHSCORES')
+
+    -- Обрабатываем результаты
+    local result_messages = {}
+
+    for i = 1, #messages_with_scores, 2 do
+        local message_json = messages_with_scores[i]
+        local score = messages_with_scores[i + 1]
+
+        local success, message_data = pcall(cjson.decode, message_json)
+
+        if success then
+            table.insert(result_messages, {
+                score = tonumber(score),
+                timestamp = tonumber(score), -- обычно score = timestamp
+                msg = tostring(message_data),
+                raw_json = message_json
+            })
+        else
+            table.insert(result_messages, {
+                score = tonumber(score),
+                raw_data = message_json,
+                error = "Invalid JSON"
+            })
+        end
+    end
+
+    -- Сортируем по score (времени)
+    table.sort(result_messages, function(a, b)
+        return a.score < b.score  -- по возрастанию времени
+    end)
+
+    -- local result = {
+    --     success = true,
+    --     total_count = #result_messages,
+    --     key_type = key_type,
+    --     dialog_key = dialog_key,
+    --     messages = result_messages,
+    --     timestamp = redis.call('TIME')[1]
+    -- }
+
+    return cjson.encode(result_messages)
+end
+
+redis.register_function('get_messages', get_messages)
+

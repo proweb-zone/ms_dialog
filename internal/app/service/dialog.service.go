@@ -8,6 +8,7 @@ import (
 	"ms_dialog/internal/app/dto"
 	"ms_dialog/internal/app/entity"
 	"ms_dialog/internal/app/repository"
+	"ms_dialog/internal/db/redis"
 
 	eventclient "github.com/proweb-zone/event-client"
 	pb "github.com/proweb-zone/event-client/gen/go"
@@ -16,12 +17,14 @@ import (
 type DialogService struct {
 	repo        *repository.DialogRepository
 	eventClient *eventclient.EventClient
+	connRedisDb *redis.RedisDb
 }
 
-func NewDialogService(newEventClient *eventclient.EventClient, newRepo *repository.DialogRepository) *DialogService {
+func NewDialogService(newEventClient *eventclient.EventClient, newRepo *repository.DialogRepository, newConnRedisDb *redis.RedisDb) *DialogService {
 	return &DialogService{
 		repo:        newRepo,
 		eventClient: newEventClient,
+		connRedisDb: newConnRedisDb,
 	}
 }
 
@@ -64,13 +67,26 @@ func (d *DialogService) CheckMsg(event *pb.Event) {
 	}
 
 	if parsedResponse.State == true {
-		d.repo.ActiveMsg(parsedResponse.Id)
+		dialog, errActiveMsg := d.repo.ActiveMsg(parsedResponse.Id)
+		if errActiveMsg != nil {
+			log.Fatalf("Failed to parse payload JSON: %v", errActiveMsg)
+		}
+
+		// add msg in redis
+		errAddMsg := d.connRedisDb.AddMsg(dialog)
+		if errAddMsg != nil {
+			fmt.Errorf("error write msm in redis db")
+		}
+
 	} else {
 		d.repo.DeleteMsg(parsedResponse.Id)
 	}
 
 }
 
-func (d *DialogService) GetDialogList(userIdSender int, userIdRecepient int) (*[]entity.Dialog, error) {
-	return d.repo.GetDialogList(userIdSender, userIdRecepient)
+func (d *DialogService) GetDialogList(userId int, userIdFriend int) (*[]entity.Dialog, error) {
+
+	return d.connRedisDb.UdfGetMessages(userId, userIdFriend)
+
+	//return d.repo.GetDialogList(userIdSender, userIdRecepient)
 }

@@ -10,6 +10,7 @@ import (
 	"ms_dialog/internal/app/service"
 	"ms_dialog/internal/config"
 	"ms_dialog/internal/db/postgres"
+	"ms_dialog/internal/db/redis"
 	"net/http"
 	"os"
 	"os/signal"
@@ -39,14 +40,23 @@ func StartServer(config *config.Config) {
 
 	log.Println("MS Dialog service started")
 
-	// init service dialog
-	conn := postgres.Connect(config)
-	defer postgres.Close(conn)
+	// conn PostgreSql
+	connDb := postgres.Connect(config)
+	connDb.SetMaxOpenConns(500)
+	connDb.SetMaxIdleConns(1000)
+	connDb.SetConnMaxLifetime(5 * time.Minute)
+	defer postgres.Close(connDb)
 
-	dialogRepository := repository.NewDialogRepository(conn)
-	newDialogService := service.NewDialogService(client, dialogRepository)
+	// conn RedisDB
+	connRedisDb, errConnRedis := redis.InitRedisDb()
+	if errConnRedis != nil {
+		log.Fatalf("Failed to connection redisdb: %v", errConnRedis)
+	}
 
-	authRepository := repository.NewAuthRepository(conn)
+	dialogRepository := repository.NewDialogRepository(connDb)
+	newDialogService := service.NewDialogService(client, dialogRepository, connRedisDb)
+
+	authRepository := repository.NewAuthRepository(connDb)
 	newAuthService := service.NewAuthService(client, authRepository)
 
 	// init handler
