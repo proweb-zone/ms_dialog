@@ -3,19 +3,23 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"ms_dialog/internal/app/entity"
+	"time"
 
 	"github.com/lib/pq"
+	"github.com/redis/go-redis/v9"
 )
 
 type DialogRepository struct {
-	conn *sql.DB
+	conn        *sql.DB
+	connRedisDb *redis.Client
 }
 
-func NewDialogRepository(conn *sql.DB) *DialogRepository {
-	return &DialogRepository{conn}
+func NewDialogRepository(conn *sql.DB, newConnRedisDb *redis.Client) *DialogRepository {
+	return &DialogRepository{conn, newConnRedisDb}
 }
 
 func (d *DialogRepository) SendMsgUser(newMsg *entity.Dialog) (*entity.Dialog, error) {
@@ -155,4 +159,70 @@ func (d *DialogRepository) DeleteMsg(id int) error {
 	}
 
 	return nil
+}
+
+func (d *DialogRepository) AddMsgRedis(dialog *entity.Dialog) error {
+	userID := dialog.User_id_sender
+	userIDFriend := dialog.User_id_recipient
+	msg := dialog.Msg
+
+	timeNow := time.Now().Unix()
+	key := fmt.Sprintf("user-%d:friend-%d:dialog", userID, userIDFriend)
+	ctx := context.Background()
+
+	prepairMsg := redis.Z{
+		Score:  float64(timeNow),
+		Member: msg,
+	}
+
+	_, err := d.connRedisDb.ZAdd(ctx, key, prepairMsg).Result()
+	if err != nil {
+		return fmt.Errorf("failed to add message: %w", err)
+	}
+
+	// Удаляем сообщения, если их больше 1000
+	d.connRedisDb.ZRemRangeByRank(ctx, key, 0, -1001)
+
+	return nil
+}
+
+func (d *DialogRepository) GetMessagesRedis(userId int, userIdFriend int) (*[]*entity.Dialog, error) {
+	buildDialogs := make([]*entity.Dialog, 0)
+	ctx := context.Background()
+	key := fmt.Sprintf("user-%d:friend-%d:dialog", userId, userIdFriend)
+
+	// Получаем последние 1000 сообщений
+	dialogsRedis, err := d.connRedisDb.ZRevRangeWithScores(ctx, key, 0, 999).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	for itemId, dialog := range dialogsRedis {
+		//timestamp := time.Now().Unix()
+		buildDialogs = append(buildDialogs, &entity.Dialog{ID: itemId, User_id_sender: userId, State: true, Msg: dialog.Member.(string)})
+	}
+
+	return &buildDialogs, nil
+}
+
+func (d *DialogRepository) UdfGetMessagesRedis(userId int, userIdFriend int) (*[]entity.Dialog, error) {
+	ctx := context.Background()
+
+	dialogList, err := d.connRedisDb.FCall(ctx, "get_messages",
+		[]string{fmt.Sprintf("user-%d", userId), fmt.Sprintf("friend-%d", userIdFriend)}).Result()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get messages: %w", err)
+	}
+
+	var buildDialogs []entity.Dialog
+	if err := json.Unmarshal([]byte(dialogList.(string)), &buildDialogs); err != nil {
+		return nil, fmt.Errorf("failed to parse messages: %w", err)
+	}
+
+	reBuildDialogs := make([]entity.Dialog, 0)
+	for itemId, dialog := range buildDialogs {
+		reBuildDialogs = append(reBuildDialogs, entity.Dialog{ID: itemId, User_id_sender: userId, User_id_recipient: userIdFriend, State: true, Msg: dialog.Msg})
+	}
+
+	return &reBuildDialogs, nil
 }

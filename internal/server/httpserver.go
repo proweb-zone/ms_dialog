@@ -53,8 +53,8 @@ func StartServer(config *config.Config) {
 		log.Fatalf("Failed to connection redisdb: %v", errConnRedis)
 	}
 
-	dialogRepository := repository.NewDialogRepository(connDb)
-	newDialogService := service.NewDialogService(client, dialogRepository, connRedisDb)
+	dialogRepository := repository.NewDialogRepository(connDb, connRedisDb)
+	newDialogService := service.NewDialogService(client, dialogRepository)
 
 	authRepository := repository.NewAuthRepository(connDb)
 	newAuthService := service.NewAuthService(client, authRepository)
