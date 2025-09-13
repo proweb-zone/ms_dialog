@@ -49,8 +49,8 @@ func (d *DialogRepository) SendMsgUser(newMsg *entity.Dialog) (*entity.Dialog, e
 
 	var dialog entity.Dialog
 	row.Scan(&dialog.ID)
-	row = d.conn.QueryRow("SELECT id, user_id_sender, user_id_recipient, msg, state, created_at, updated_at FROM dialog WHERE id = $1", &dialog.ID)
-	err = row.Scan(&dialog.ID, &dialog.User_id_sender, &dialog.User_id_recipient, &dialog.Msg, &dialog.State, &dialog.CreatedAt, &dialog.Updated_at)
+	row = d.conn.QueryRow("SELECT id, user_id_sender, user_id_recipient, msg, state, read, created_at, updated_at FROM dialog WHERE id = $1", &dialog.ID)
+	err = row.Scan(&dialog.ID, &dialog.User_id_sender, &dialog.User_id_recipient, &dialog.Msg, &dialog.State, &dialog.Read, &dialog.CreatedAt, &dialog.Updated_at)
 	if err != nil {
 		return nil, fmt.Errorf("scanning result: %w", err)
 	}
@@ -76,7 +76,7 @@ func (d *DialogRepository) GetDialogList(userIdSender int, userIdRecepient int) 
 
 	ctx := context.Background()
 
-	query := "SELECT id, user_id_sender, user_id_recipient, msg, state, created_at, updated_at FROM dialog WHERE user_id_sender = ANY($1) AND user_id_recipient = ANY($2) AND state = true"
+	query := "SELECT id, user_id_sender, user_id_recipient, msg, state, read, created_at, updated_at FROM dialog WHERE user_id_sender = ANY($1) AND user_id_recipient = ANY($2) AND state = true"
 
 	rows, err := d.conn.QueryContext(ctx, query, idsSenderValues[0], idsRecipientValues[0])
 	if err != nil {
@@ -87,7 +87,7 @@ func (d *DialogRepository) GetDialogList(userIdSender int, userIdRecepient int) 
 	var dialogList []entity.Dialog
 	for rows.Next() {
 		var dialog entity.Dialog
-		err := rows.Scan(&dialog.ID, &dialog.User_id_sender, &dialog.User_id_recipient, &dialog.Msg, &dialog.State, &dialog.CreatedAt, &dialog.Updated_at)
+		err := rows.Scan(&dialog.ID, &dialog.User_id_sender, &dialog.User_id_recipient, &dialog.Msg, &dialog.State, &dialog.Read, &dialog.CreatedAt, &dialog.Updated_at)
 		if err != nil {
 			return nil, err
 		}
@@ -132,6 +132,7 @@ func (d *DialogRepository) ActiveMsg(id int) (*entity.Dialog, error) {
 		&dialog.User_id_recipient,
 		&dialog.Msg,
 		&dialog.State,
+		&dialog.Read,
 		&dialog.CreatedAt,
 		&dialog.Updated_at)
 	if err != nil {
@@ -139,6 +140,33 @@ func (d *DialogRepository) ActiveMsg(id int) (*entity.Dialog, error) {
 	}
 
 	return &dialog, nil
+}
+
+func (d *DialogRepository) AllWriteMsgs(userId int, userIdFriend int) error {
+	ctx := context.Background()
+	tx, err := d.conn.BeginTx(ctx, nil)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+	defer tx.Rollback()
+
+	stmt, err := d.conn.PrepareContext(ctx, `UPDATE dialog SET read = true WHERE user_id_sender = $1 AND user_id_recipient = $2 RETURNING *`)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	defer stmt.Close()
+
+	stmt.QueryRowContext(ctx, userId, userIdFriend)
+
+	err = tx.Commit()
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	return nil
 }
 
 func (d *DialogRepository) DeleteMsg(id int) error {
@@ -198,8 +226,7 @@ func (d *DialogRepository) GetMessagesRedis(userId int, userIdFriend int) (*[]*e
 	}
 
 	for itemId, dialog := range dialogsRedis {
-		//timestamp := time.Now().Unix()
-		buildDialogs = append(buildDialogs, &entity.Dialog{ID: itemId, User_id_sender: userId, State: true, Msg: dialog.Member.(string)})
+		buildDialogs = append(buildDialogs, &entity.Dialog{ID: itemId, User_id_sender: userId, State: true, Read: false, Msg: dialog.Member.(string)})
 	}
 
 	return &buildDialogs, nil
@@ -214,6 +241,8 @@ func (d *DialogRepository) UdfGetMessagesRedis(userId int, userIdFriend int) (*[
 		return nil, fmt.Errorf("failed to get messages: %w", err)
 	}
 
+	fmt.Println(dialogList)
+
 	var buildDialogs []entity.Dialog
 	if err := json.Unmarshal([]byte(dialogList.(string)), &buildDialogs); err != nil {
 		return nil, fmt.Errorf("failed to parse messages: %w", err)
@@ -221,7 +250,8 @@ func (d *DialogRepository) UdfGetMessagesRedis(userId int, userIdFriend int) (*[
 
 	reBuildDialogs := make([]entity.Dialog, 0)
 	for itemId, dialog := range buildDialogs {
-		reBuildDialogs = append(reBuildDialogs, entity.Dialog{ID: itemId, User_id_sender: userId, User_id_recipient: userIdFriend, State: true, Msg: dialog.Msg})
+		//fmt.Println(dialog)
+		reBuildDialogs = append(reBuildDialogs, entity.Dialog{ID: itemId, User_id_sender: userId, User_id_recipient: userIdFriend, State: true, Read: true, Msg: dialog.Msg})
 	}
 
 	return &reBuildDialogs, nil

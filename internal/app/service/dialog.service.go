@@ -31,6 +31,7 @@ func (d *DialogService) SendMsgUser(requestDialog *dto.DialogRequestDto) (*entit
 		User_id_recipient: requestDialog.User_id_recipient,
 		Msg:               requestDialog.Msg,
 		State:             false,
+		Read:              false,
 	})
 
 	if err != nil {
@@ -55,7 +56,7 @@ type EventDialogReponse struct {
 	State bool
 }
 
-func (d *DialogService) CheckMsg(event *pb.Event) {
+func (d *DialogService) CheckMsg(event *pb.Event) (*entity.Dialog, error) {
 	payload := event.GetPayload()
 
 	parsedResponse := &EventDialogReponse{}
@@ -71,15 +72,25 @@ func (d *DialogService) CheckMsg(event *pb.Event) {
 
 		errAddMsg := d.repo.AddMsgRedis(dialog)
 		if errAddMsg != nil {
-			fmt.Errorf("error write msm in redis db")
+			fmt.Errorf("error write msg in RedisDB")
 		}
 
+		return dialog, nil
 	} else {
 		d.repo.DeleteMsg(parsedResponse.Id)
+		return nil, fmt.Errorf("error check Msg")
 	}
 
 }
 
-func (d *DialogService) GetDialogList(userId int, userIdFriend int) (*[]entity.Dialog, error) {
-	return d.repo.UdfGetMessagesRedis(userId, userIdFriend)
+func (d *DialogService) GetDialogList(userId int, userIdFriend int) (*[]*entity.Dialog, error) {
+	return d.repo.GetMessagesRedis(userId, userIdFriend)
+}
+
+func (d *DialogService) AllWriteMsgs(userId int, userIdFriend int, setError string) error {
+	if setError == "true" {
+		return fmt.Errorf("err")
+	} else {
+		return d.repo.AllWriteMsgs(userId, userIdFriend)
+	}
 }

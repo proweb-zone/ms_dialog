@@ -17,18 +17,22 @@ import (
 )
 
 type Handler struct {
-	dialogService *service.DialogService
-	authService   *service.AuthService
+	dialogService  *service.DialogService
+	authService    *service.AuthService
+	counterService *service.CounterService
 }
 
-func NewHandlers(newDialogService *service.DialogService, newAthService *service.AuthService) (*Handler, error) {
-	return &Handler{dialogService: newDialogService, authService: newAthService}, nil
+func NewHandlers(newDialogService *service.DialogService, newAthService *service.AuthService, newCounterService *service.CounterService) (*Handler, error) {
+	return &Handler{dialogService: newDialogService, authService: newAthService, counterService: newCounterService}, nil
 }
 
 func (h *Handler) Events(event *pb.Event) error {
 	switch event.Type {
 	case "user.access":
-		h.dialogService.CheckMsg(event)
+		dialog, errCheckMsg := h.dialogService.CheckMsg(event)
+		if errCheckMsg == nil {
+			h.counterService.IncrementCounter(dialog)
+		}
 		return nil
 	case "user.auth":
 		h.authService.CreateToken(event)
@@ -102,6 +106,7 @@ func (h *Handler) GetDialog(w http.ResponseWriter, r *http.Request) {
 	userIdSender := auth.User_id
 	// userIdSender := 1
 
+	setError := chi.URLParam(r, "error")
 	userIdRecepientStr := chi.URLParam(r, "user_id")
 	userIdRecepient, err := strconv.Atoi(userIdRecepientStr)
 	if err != nil {
@@ -114,10 +119,30 @@ func (h *Handler) GetDialog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// получаем диалоги из RedisDb
 	dialogList, errorDialog := h.dialogService.GetDialogList(userIdSender, userIdRecepient)
 	if errorDialog != nil {
 		http.Error(w, errorDialog.Error(), http.StatusBadRequest)
 		return
+	}
+
+	// получем кол-во непрочитанных сообщений из счетчика
+	counter, errGetCounter := h.counterService.GetCounter(userIdSender, userIdRecepient)
+	if errGetCounter != nil {
+		log.Fatalf("error get counter in RedisDb %v", errGetCounter)
+	}
+
+	// сбрасываем счетчик в redisDB
+	errResetCounter := h.counterService.ResetCounter(userIdSender, userIdRecepient)
+	if errResetCounter != nil {
+		fmt.Errorf("error reset counter in RedisDb %v", errResetCounter)
+	}
+
+	// делаем сообщения прочитанными в БД Postgresql
+	errAllWriteMsg := h.dialogService.AllWriteMsgs(userIdSender, userIdRecepient, setError)
+	if errAllWriteMsg != nil {
+		// todo устанавливаем счетчик в прежнее положение
+		h.counterService.SetCounter(userIdSender, userIdRecepient, counter)
 	}
 
 	utils.ResponseJson(dialogList, w)

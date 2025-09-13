@@ -12,11 +12,11 @@ type Message struct {
 	Timestamp string
 }
 
-func InitRedisDb() (*redis.Client, error) {
+func InitRedisDb(dbIndex int) (*redis.Client, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "123123vv",
-		DB:       0,
+		DB:       dbIndex,
 	})
 
 	_, err := client.Ping(context.Background()).Result()

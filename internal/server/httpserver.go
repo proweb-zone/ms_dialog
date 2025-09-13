@@ -47,20 +47,29 @@ func StartServer(config *config.Config) {
 	connDb.SetConnMaxLifetime(5 * time.Minute)
 	defer postgres.Close(connDb)
 
-	// conn RedisDB
-	connRedisDb, errConnRedis := redis.InitRedisDb()
+	// conn RedisDB for dialogService
+	connRedisDbDialogService, errConnRedis := redis.InitRedisDb(0)
 	if errConnRedis != nil {
 		log.Fatalf("Failed to connection redisdb: %v", errConnRedis)
 	}
 
-	dialogRepository := repository.NewDialogRepository(connDb, connRedisDb)
+	dialogRepository := repository.NewDialogRepository(connDb, connRedisDbDialogService)
 	newDialogService := service.NewDialogService(client, dialogRepository)
 
 	authRepository := repository.NewAuthRepository(connDb)
 	newAuthService := service.NewAuthService(client, authRepository)
 
+	// conn RedisDB for dialogService
+	connRedisCounterService, errConnRedis := redis.InitRedisDb(1)
+	if errConnRedis != nil {
+		log.Fatalf("Failed to connection redisdb: %v", errConnRedis)
+	}
+
+	counterRepository := repository.NewCounterRepository(connRedisCounterService)
+	newCounterService := service.NewCounterService(counterRepository)
+
 	// init handler
-	handlers, err := handlers.NewHandlers(newDialogService, newAuthService)
+	handlers, err := handlers.NewHandlers(newDialogService, newAuthService, newCounterService)
 	if err != nil {
 		fmt.Errorf("%v", err)
 	}

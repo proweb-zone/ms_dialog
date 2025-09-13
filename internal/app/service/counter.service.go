@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"ms_dialog/internal/app/entity"
 	"ms_dialog/internal/app/repository"
 )
 
@@ -28,18 +29,16 @@ func NewCounterService(newRepo *repository.CounterRepository) *CounterService {
 	}
 }
 
-func (s *CounterService) getKey(userID, chatID string) string {
-	if chatID == "" {
-		return fmt.Sprintf("unread:user:%s", userID)
-	}
-	return fmt.Sprintf("unread:user:%s:chat:%s", userID, chatID)
-}
-
 // Increment увеличивает счетчик непрочитанных сообщений
-func (s *CounterService) Increment(ctx context.Context, userID, chatID string) error {
-	key := s.getKey(userID, chatID)
+func (s *CounterService) IncrementCounter(dialog *entity.Dialog) error {
 
-	count, err := s.repo.IncrementRedis(ctx, key)
+	userID := dialog.User_id_sender
+	friendID := dialog.User_id_recipient
+	ctx := context.Background()
+
+	key := s.getKey(userID, friendID)
+
+	count, err := s.repo.IncrementCounter(ctx, key)
 	if err != nil {
 		return err
 	}
@@ -53,30 +52,31 @@ func (s *CounterService) Increment(ctx context.Context, userID, chatID string) e
 }
 
 // Decrement уменьшает счетчик
-func (s *CounterService) Decrement(ctx context.Context, userID, chatID string) error {
-	key := s.getKey(userID, chatID)
+// func (s *CounterService) DecrementCounter(ctx context.Context, userID, chatID string) error {
+// 	key := s.getKey(userID, chatID)
 
-	count, err := s.repo.Decrement(ctx, key)
-	if err != nil {
-		return err
-	}
+// 	count, err := s.repo.DecrementCounter(ctx, key)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	// Не позволяем счетчику уйти в отрицательные значения
-	if count < 0 {
-		count = 0
-		s.repo.Set(ctx, key, 0, 0)
-	}
+// 	// Не позволяем счетчику уйти в отрицательные значения
+// 	if count < 0 {
+// 		count = 0
+// 		s.repo.SetCounter(ctx, key, 0, 0)
+// 	}
 
-	s.cacheMutex.Lock()
-	s.cache[key] = count
-	s.cacheMutex.Unlock()
+// 	s.cacheMutex.Lock()
+// 	s.cache[key] = count
+// 	s.cacheMutex.Unlock()
 
-	return nil
-}
+// 	return nil
+// }
 
-// Get получает значение счетчика
-func (s *CounterService) Get(ctx context.Context, userID, chatID string) (int64, error) {
-	key := s.getKey(userID, chatID)
+// // Get получает значение счетчика
+func (s *CounterService) GetCounter(userID, friendID int) (int64, error) {
+	key := s.getKey(userID, friendID)
+	ctx := context.Background()
 
 	// Проверяем кэш сначала
 	s.cacheMutex.RLock()
@@ -87,7 +87,7 @@ func (s *CounterService) Get(ctx context.Context, userID, chatID string) (int64,
 	s.cacheMutex.RUnlock()
 
 	// Если нет в кэше, идем в Redis
-	count, err := s.repo.Get(ctx, key)
+	count, err := s.repo.GetCounter(ctx, key)
 	if err != nil {
 		// Ключ не существует, возвращаем 0
 		return 0, nil
@@ -103,11 +103,12 @@ func (s *CounterService) Get(ctx context.Context, userID, chatID string) (int64,
 	return count, nil
 }
 
-// Reset сбрасывает счетчик
-func (s *CounterService) Reset(ctx context.Context, userID, chatID string) error {
-	key := s.getKey(userID, chatID)
+// // Reset сбрасывает счетчик
+func (s *CounterService) ResetCounter(userID int, friendID int) error {
+	key := s.getKey(userID, friendID)
+	ctx := context.Background()
 
-	err := s.repo.Del(ctx, key)
+	err := s.repo.DelCounter(ctx, key)
 	if err != nil {
 		return err
 	}
@@ -118,4 +119,15 @@ func (s *CounterService) Reset(ctx context.Context, userID, chatID string) error
 	s.cacheMutex.Unlock()
 
 	return nil
+}
+
+func (s *CounterService) SetCounter(userID int, friendID int, counter int64) {
+	ctx := context.Background()
+	key := s.getKey(userID, friendID)
+
+	s.repo.SetCounter(ctx, key, counter, 0)
+}
+
+func (s *CounterService) getKey(userID int, friendID int) string {
+	return fmt.Sprintf("user-id-%d:friend-id-%d:counter", userID, friendID)
 }

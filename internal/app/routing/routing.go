@@ -21,7 +21,7 @@ func NewRouting(handlers *handlers.Handler) *chi.Mux {
 	}))
 
 	r.Post("/v2/dialog/{user_id}/send", handlers.SendMsgUser)
-	r.Get("/v2/dialog/{user_id}/list", handlers.GetDialog)
+	r.Get("/v2/dialog/{user_id}/list/{error}", handlers.GetDialog)
 
 	return r
 }
