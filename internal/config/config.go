@@ -16,6 +16,7 @@ type Config struct {
 	GrpcServer `yaml:"grpc_server"`
 	Db
 	UrlsDb
+	Redis
 }
 
 type HTTPServer struct {
@@ -24,6 +25,10 @@ type HTTPServer struct {
 
 type GrpcServer struct {
 	Addr string `yaml:"grpc_server_address"`
+}
+
+type Redis struct {
+	Addr string
 }
 
 type Db struct {
@@ -45,11 +50,17 @@ func MustInit(configPath string) *Config {
 
 	env := MustGetEnv("ENV")
 
+	// определяем переменные grpc сервера в dev/prod режиме
 	dbPort := "5432"
 	dbHost := MustGetEnv("DB_HOST")
+	redis := MustGetEnv("REDIS_ADDR")
+	grpcAddrServer := MustGetEnv("GRPC_SERVER_ADDRESS")
+
 	if env == "DEV" {
 		dbPort = MustGetEnv("DB_PORT")
 		dbHost = "localhost"
+		redis = MustGetEnv("REDIS_ADDR_DEV")
+		grpcAddrServer = MustGetEnv("GRPC_SERVER_ADDRESS_DEV")
 	}
 
 	db := &Db{
@@ -64,12 +75,6 @@ func MustInit(configPath string) *Config {
 
 	var urlDb = buildDbConnectUrl(db)
 
-	// определяем переменную grpc сервера в dev/prod режиме
-	grpcAddrServer := MustGetEnv("GRPC_SERVER_ADDRESS")
-	if env == "DEV" {
-		grpcAddrServer = MustGetEnv("GRPC_SERVER_ADDRESS_DEV")
-	}
-
 	return &Config{
 		Env: env,
 		HTTPServer: HTTPServer{
@@ -81,6 +86,9 @@ func MustInit(configPath string) *Config {
 		Db: *db,
 		UrlsDb: UrlsDb{
 			Db: urlDb,
+		},
+		Redis: Redis{
+			Addr: redis,
 		},
 	}
 }

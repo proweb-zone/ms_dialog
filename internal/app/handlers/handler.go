@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi"
 	pb "github.com/proweb-zone/event-client/gen/go"
@@ -171,4 +172,10 @@ func (h *Handler) checkTokenAccess(r *http.Request) (*entity.Auth, error) {
 	}
 
 	return auth, nil
+}
+
+func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status": "healthy", "timestamp": "` + time.Now().Format(time.RFC3339) + `"}`))
 }

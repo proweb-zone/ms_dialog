@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"ms_dialog/internal/config"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -12,9 +13,9 @@ type Message struct {
 	Timestamp string
 }
 
-func InitRedisDb(dbIndex int) (*redis.Client, error) {
+func InitRedisDb(config *config.Config, dbIndex int) (*redis.Client, error) {
 	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     config.Redis.Addr,
 		Password: "123123vv",
 		DB:       dbIndex,
 	})

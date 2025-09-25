@@ -2,13 +2,18 @@ package routing
 
 import (
 	"ms_dialog/internal/app/handlers"
+	"ms_dialog/internal/app/middleware/metrics"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func NewRouting(handlers *handlers.Handler) *chi.Mux {
 	r := chi.NewRouter()
+
+	// объявляем MiddleWare для сбора метрик
+	r.Use(metrics.MetricsMiddleware())
 
 	// CORS
 	r.Use(cors.Handler(cors.Options{
@@ -22,6 +27,10 @@ func NewRouting(handlers *handlers.Handler) *chi.Mux {
 
 	r.Post("/v2/dialog/{user_id}/send", handlers.SendMsgUser)
 	r.Get("/v2/dialog/{user_id}/list/{error}", handlers.GetDialog)
+
+	// Health check и метрики
+	r.Get("/health", handlers.HealthHandler)
+	r.Get("/metrics", promhttp.Handler().ServeHTTP)
 
 	return r
 }

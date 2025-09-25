@@ -26,6 +26,10 @@ services:
     volumes:
       - ./redis_data:/data
       - ./load_test/dialog_functions.lua:/dialog_functions.lua
+    networks:
+      shared-net:
+        aliases:
+          - redis-service.shared
     command:
       - '--appendonly'
       - 'yes'
@@ -43,6 +47,8 @@ services:
       - "${SERVER_PORT}:${SERVER_PORT}"
     networks:
       shared-net:
+        aliases:
+          - ms-dialog
     depends_on:
       - pg-dialog-service
     env_file:

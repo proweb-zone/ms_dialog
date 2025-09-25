@@ -48,7 +48,7 @@ func StartServer(config *config.Config) {
 	defer postgres.Close(connDb)
 
 	// conn RedisDB for dialogService
-	connRedisDbDialogService, errConnRedis := redis.InitRedisDb(0)
+	connRedisDbDialogService, errConnRedis := redis.InitRedisDb(config, 0)
 	if errConnRedis != nil {
 		log.Fatalf("Failed to connection redisdb: %v", errConnRedis)
 	}
@@ -60,7 +60,7 @@ func StartServer(config *config.Config) {
 	newAuthService := service.NewAuthService(client, authRepository)
 
 	// conn RedisDB for dialogService
-	connRedisCounterService, errConnRedis := redis.InitRedisDb(1)
+	connRedisCounterService, errConnRedis := redis.InitRedisDb(config, 1)
 	if errConnRedis != nil {
 		log.Fatalf("Failed to connection redisdb: %v", errConnRedis)
 	}
