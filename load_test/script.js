@@ -26,7 +26,7 @@ export default function () {
     };
 
    group('API uptime check', () => {
-       const response = http.get('http://localhost:3002/v2/dialog/2/list', {
+       const response = http.get('http://localhost:3002/v2/dialog/2/list/false', {
         headers: headers
     });
        check(response, {

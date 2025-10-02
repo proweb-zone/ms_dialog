@@ -1,0 +1,18 @@
+FROM zabbix/zabbix-agent2:alpine-7.4.3
+
+USER root
+
+# Устанавливаем все необходимые утилиты
+RUN apk update && apk add --no-cache \
+    postgresql-client \
+    redis \
+    curl \
+    jq \
+    docker-cli
+
+# Копируем скрипты
+COPY zabbix/agent/scripts/ /var/lib/zabbix/scripts/
+RUN chmod +x /var/lib/zabbix/scripts/*.sh
+
+# Возвращаемся к пользователю zabbix
+USER zabbix

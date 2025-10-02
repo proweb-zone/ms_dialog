@@ -31,10 +31,10 @@ services:
         aliases:
           - redis-service.shared
     command:
-      - '--appendonly'
-      - 'yes'
-      - '--save'
-      - '60 10'
+      - "--appendonly"
+      - "yes"
+      - "--save"
+      - "60 10"
     environment:
       - REDIS_PASSWORD=123123vv
       - REDIS_LRU_LIMIT_MB=1024
@@ -53,6 +53,30 @@ services:
       - pg-dialog-service
     env_file:
       - .env
+  # Zabbix Agent для сбора метрик со всех сервисов
+  zabbix-agent-dialog:
+    build:
+      context: .
+      dockerfile: Dockerfile.zabbix-agent
+    container_name: zabbix-agent-dialog
+    restart: unless-stopped
+    environment:
+      - ZBX_HOSTNAME=dialog-service-cluster
+      - ZBX_SERVER_HOST=zabbix-server # Укажите ваш Zabbix сервер
+      - ZBX_ACTIVE_ALLOW=true
+      - ZBX_METADATA=dialog,postgres,redis,golang,docker
+    volumes:
+      - ./zabbix/agent/conf/zabbix_agent2.conf:/etc/zabbix/zabbix_agent2.conf:ro
+      - ./zabbix/agent/conf.d/user_parameters.conf:/etc/zabbix/zabbix_agent2.d/user_parameters.conf:ro
+      - ./zabbix/agent/scripts:/var/lib/zabbix/scripts:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      shared-net:
+        ipv4_address: 172.25.0.16
+        aliases:
+          - zabbix-agent.shared
+    privileged: true
+    pid: host
 
 networks:
   shared-net:
