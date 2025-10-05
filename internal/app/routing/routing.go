@@ -31,6 +31,7 @@ func NewRouting(handlers *handlers.Handler) *chi.Mux {
 	// Health check и метрики
 	r.Get("/health", handlers.HealthHandler)
 	r.Get("/metrics", promhttp.Handler().ServeHTTP)
+	r.Get("/v2/test", handlers.Test)
 
 	return r
 }

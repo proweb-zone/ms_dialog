@@ -3026,3 +3026,27 @@ $4
 incr
 $29
 user-id-1:friend-id-2:counter
+*2
+$6
+SELECT
+$1
+0
+*4
+$4
+zadd
+$22
+user-1:friend-2:dialog
+$10
+1759694098
+$7
+hello 7
+*2
+$6
+SELECT
+$1
+1
+*2
+$4
+incr
+$29
+user-id-1:friend-id-2:counter
